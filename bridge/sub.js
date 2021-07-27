@@ -1,7 +1,7 @@
 var mqtt = require('mqtt');
 
 const IPbroker = 'mqtt://130.136.2.70:1883'
-const topic_1 = 'temperature/damianobellucci'
+const topic_1 = 'settingparameters/damianobellucci'
 const options = {
     clientId: 'clientJSsub',
     protocolId: 'MQIsdp',
@@ -10,8 +10,7 @@ const options = {
     debug: true,
     username: 'IOTuser',
     password: 'IOTuser',
-    retain: false,
-    qos: 2
+    qos: 2 //perché voglio che parametri di settaggio che arrivano dal broker arrivano senza duplicati e senza dubbio che non siano arrivati
 };
 
 var client = mqtt.connect(IPbroker, options);
@@ -31,4 +30,4 @@ client.on('message', function (topic, message, packet) {
     console.log(packet)
 });
 
-client.subscribe(topic_1)
+client.subscribe(topic_1, options)

@@ -11,7 +11,7 @@ const options = {
     username: 'IOTuser',
     password: 'IOTuser',
     retain: true,
-    qos: 1
+    qos: 2 //perché voglio che parametri di settaggio arrivino al broker senza duplicati e senza dubbio che non siano arrivati
 };
 var counter = 0
 
@@ -30,7 +30,7 @@ client.on("error", function (error) {
 setInterval(() => {
     if (client.connected == true) {
         counter++;
-        string = "5000;12334;111111;98765;9123477;"
+        string = "6000;11.24;13.12;12.33;25.29222222;"
 
         client.publish(topic_1, string.toString(), options);
         console.log('-published: ' + counter)

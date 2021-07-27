@@ -10,8 +10,8 @@ float temperature;
 int counter;
 
 void setup_temperature(){
-  temperature = -300;
-  counter = 0;
+  //temperature = -300;
+  //counter = 0;
   dht.begin();
   Serial.begin(115200);
   dht.begin();
@@ -73,7 +73,8 @@ void setup_wifi() {
 WiFiClient espClient;
 PubSubClient client;
 
-int sample_frequency=3000;
+int sample_frequency = NULL;
+float min_temp, max_temp, min_moi, max_moi;
 
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
@@ -90,16 +91,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   sample_frequency=string_setting_parameters.substring(0,ind1).toInt();
 
   int ind2 = string_setting_parameters.indexOf(";", ind1+1 );
-  int min_temp = string_setting_parameters.substring(ind1+1, ind2+1).toInt(); 
+  min_temp = string_setting_parameters.substring(ind1+1, ind2+1).toFloat(); 
 
   int ind3 = string_setting_parameters.indexOf(";", ind2+1 );
-  int max_temp = string_setting_parameters.substring(ind2+1, ind3+1).toInt();
+  max_temp = string_setting_parameters.substring(ind2+1, ind3+1).toFloat();
 
   int ind4 = string_setting_parameters.indexOf(";", ind3+1 );
-  int min_moi = string_setting_parameters.substring(ind3+1, ind4+1).toInt();
+  min_moi = string_setting_parameters.substring(ind3+1, ind4+1).toFloat();
 
   int ind5 = string_setting_parameters.indexOf(";", ind4+1 );
-  int max_moi = string_setting_parameters.substring(ind4+1, ind5+1).toInt();
+  max_moi = string_setting_parameters.substring(ind4+1, ind5+1).toFloat();
 
   Serial.println("Sample frequency:");
   Serial.println(sample_frequency);
@@ -113,7 +114,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("min_moi:");
   Serial.println(min_moi);
 
-  Serial.println("min_moi:");
+  Serial.println("max_moi:");
   Serial.println(max_moi);
 }
 
@@ -132,7 +133,7 @@ void reconnect_mqtt() {
     // if (client.connect("ESP8266Client")) {
     if (client.connect("ESPClient8798yh98", mqtt_user, mqtt_password)) {
       Serial.println("connected");
-      client.subscribe(topic_setting_parameters);
+      client.subscribe(topic_setting_parameters,1);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -156,8 +157,11 @@ void loop() {
   if (!client.connected()) {
     reconnect_mqtt();
   }
-  client.loop();
-  client.publish(in_topic, String(current_temperature()).c_str(), true);
-  delay(sample_frequency);
-  sample_frequency=1000;
+  else{
+    client.loop();
+    if(sample_frequency!=NULL){ //controllo se è arrivato messaggio di retain
+      client.publish(in_topic, String(current_temperature()).c_str());
+      delay(sample_frequency);
+    }
+  }
 }
