@@ -1,7 +1,7 @@
 var mqtt = require('mqtt');
 
 const IPbroker = 'mqtt://130.136.2.70:1883'
-const topic_1 = 'temperature/damianobellucci'
+const topic_1 = 'settingparameters/damianobellucci'
 const options = {
     clientId: 'clientJSpub',
     protocolId: 'MQIsdp',
@@ -30,7 +30,9 @@ client.on("error", function (error) {
 setInterval(() => {
     if (client.connected == true) {
         counter++;
-        client.publish(topic_1, counter.toString(), options);
+        string = "5000;12334;111111;98765;9123477;"
+
+        client.publish(topic_1, string.toString(), options);
         console.log('-published: ' + counter)
     }
     else {

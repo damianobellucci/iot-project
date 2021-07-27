@@ -68,13 +68,59 @@ void setup_wifi() {
 #define mqtt_user "IOTuser"
 #define mqtt_password "IOTuser"
 #define in_topic "temperature/damianobellucci"
+#define topic_setting_parameters "settingparameters/damianobellucci"
 
 WiFiClient espClient;
 PubSubClient client;
 
+int sample_frequency=3000;
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  Serial.println();
+  String string_setting_parameters;
+  for (int i=0;i<length;i++) {
+    //final_string[i]=(char)payload[i];
+    string_setting_parameters.concat((char)payload[i]);
+  }
+
+  int ind1 = string_setting_parameters.indexOf(";");
+  sample_frequency=string_setting_parameters.substring(0,ind1).toInt();
+
+  int ind2 = string_setting_parameters.indexOf(";", ind1+1 );
+  int min_temp = string_setting_parameters.substring(ind1+1, ind2+1).toInt(); 
+
+  int ind3 = string_setting_parameters.indexOf(";", ind2+1 );
+  int max_temp = string_setting_parameters.substring(ind2+1, ind3+1).toInt();
+
+  int ind4 = string_setting_parameters.indexOf(";", ind3+1 );
+  int min_moi = string_setting_parameters.substring(ind3+1, ind4+1).toInt();
+
+  int ind5 = string_setting_parameters.indexOf(";", ind4+1 );
+  int max_moi = string_setting_parameters.substring(ind4+1, ind5+1).toInt();
+
+  Serial.println("Sample frequency:");
+  Serial.println(sample_frequency);
+
+  Serial.println("min temp:");
+  Serial.println(min_temp);
+
+  Serial.println("max temp:");
+  Serial.println(max_temp);
+
+  Serial.println("min_moi:");
+  Serial.println(min_moi);
+
+  Serial.println("min_moi:");
+  Serial.println(max_moi);
+}
+
 void setup_mqtt(){
   client.setClient(espClient);
   client.setServer(mqtt_server, mqtt_port);  
+  client.setCallback(callback);
 }
 
 void reconnect_mqtt() {
@@ -86,6 +132,7 @@ void reconnect_mqtt() {
     // if (client.connect("ESP8266Client")) {
     if (client.connect("ESPClient8798yh98", mqtt_user, mqtt_password)) {
       Serial.println("connected");
+      client.subscribe(topic_setting_parameters);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -111,5 +158,6 @@ void loop() {
   }
   client.loop();
   client.publish(in_topic, String(current_temperature()).c_str(), true);
-  delay(3000);
+  delay(sample_frequency);
+  sample_frequency=1000;
 }
