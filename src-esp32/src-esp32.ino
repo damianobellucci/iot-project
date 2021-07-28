@@ -60,6 +60,9 @@ const char pass[] = "casabelluccibiocco5865";
 #define in_topic "temperature/damianobellucci"
 #define topic_setting_parameters "settingparameters/damianobellucci"
 
+int sample_frequency = NULL;
+float min_temp, max_temp, min_moi, max_moi;
+
 WiFiClient net;
 MQTTClient client;
 
@@ -88,6 +91,36 @@ void connect() {
 void messageReceived(String &topic, String &payload) {
   Serial.println("incoming: " + topic + " - " + payload);
 
+  int ind1 = payload.indexOf(";");
+  sample_frequency=payload.substring(0,ind1).toInt();
+
+  int ind2 = payload.indexOf(";", ind1+1 );
+  min_temp = payload.substring(ind1+1, ind2+1).toFloat(); 
+
+  int ind3 = payload.indexOf(";", ind2+1 );
+  max_temp = payload.substring(ind2+1, ind3+1).toFloat();
+
+  int ind4 = payload.indexOf(";", ind3+1 );
+  min_moi = payload.substring(ind3+1, ind4+1).toFloat();
+
+  int ind5 = payload.indexOf(";", ind4+1 );
+  max_moi = payload.substring(ind4+1, ind5+1).toFloat();
+
+  Serial.println("Sample frequency:");
+  Serial.println(sample_frequency);
+
+  Serial.println("min temp:");
+  Serial.println(min_temp);
+
+  Serial.println("max temp:");
+  Serial.println(max_temp);
+
+  Serial.println("min_moi:");
+  Serial.println(min_moi);
+
+  Serial.println("max_moi:");
+  Serial.println(max_moi);
+
   // Note: Do not use the client in the callback to publish, subscribe or
   // unsubscribe as it may cause deadlocks when other things arrive while
   // sending and receiving acknowledgments. Instead, change a global variable,
@@ -100,7 +133,7 @@ void setup() {
 
   // Note: Local domain names (e.g. "Computer.local" on OSX) are not supported
   // by Arduino. You need to set the IP address directly.
-  client.begin("130.136.2.70",1883, net);
+  client.begin(mqtt_server,mqtt_port, net);
   client.onMessage(messageReceived);
 
   connect();
