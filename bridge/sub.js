@@ -1,7 +1,7 @@
 var mqtt = require('mqtt');
 
 const IPbroker = 'mqtt://130.136.2.70:1883'
-const topic_1 = 'settingparameters/damianobellucci'
+const topic_1 = 'temperature/damianobellucci'
 const options = {
     clientId: 'clientJSsub',
     protocolId: 'MQIsdp',

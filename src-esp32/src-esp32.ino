@@ -1,3 +1,16 @@
+// This example uses an ESP32 Development Board
+// to connect to shiftr.io.
+//
+// You can check on your device after a successful
+// connection here: https://www.shiftr.io/try.
+//
+// by Joël Gähwiler
+// https://github.com/256dpi/arduino-mqtt
+
+#include <WiFi.h>
+#include <MQTT.h>
+
+
 /*****************************************/
 
 #include <DHT.h>
@@ -35,33 +48,10 @@ float current_temperature(){
 
 /****************************************/
 
-#include <WiFi.h>
 
-#define wifi_ssid "Bellucci"
-#define wifi_password "casabelluccibiocco5865"
+const char ssid[] = "Bellucci";
+const char pass[] = "casabelluccibiocco5865";
 
-void setup_wifi() {
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(wifi_ssid);
-
-  WiFi.begin(wifi_ssid, wifi_password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-/*****************************************/
-#include <PubSubClient.h>
 
 #define mqtt_server "130.136.2.70"
 #define mqtt_port 1883
@@ -70,98 +60,67 @@ void setup_wifi() {
 #define in_topic "temperature/damianobellucci"
 #define topic_setting_parameters "settingparameters/damianobellucci"
 
-WiFiClient espClient;
-PubSubClient client;
+WiFiClient net;
+MQTTClient client;
 
-int sample_frequency = NULL;
-float min_temp, max_temp, min_moi, max_moi;
+unsigned long lastMillis = 0;
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  Serial.println();
-  String string_setting_parameters;
-  for (int i=0;i<length;i++) {
-    //final_string[i]=(char)payload[i];
-    string_setting_parameters.concat((char)payload[i]);
+void connect() {
+  Serial.print("checking wifi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
   }
 
-  int ind1 = string_setting_parameters.indexOf(";");
-  sample_frequency=string_setting_parameters.substring(0,ind1).toInt();
-
-  int ind2 = string_setting_parameters.indexOf(";", ind1+1 );
-  min_temp = string_setting_parameters.substring(ind1+1, ind2+1).toFloat(); 
-
-  int ind3 = string_setting_parameters.indexOf(";", ind2+1 );
-  max_temp = string_setting_parameters.substring(ind2+1, ind3+1).toFloat();
-
-  int ind4 = string_setting_parameters.indexOf(";", ind3+1 );
-  min_moi = string_setting_parameters.substring(ind3+1, ind4+1).toFloat();
-
-  int ind5 = string_setting_parameters.indexOf(";", ind4+1 );
-  max_moi = string_setting_parameters.substring(ind4+1, ind5+1).toFloat();
-
-  Serial.println("Sample frequency:");
-  Serial.println(sample_frequency);
-
-  Serial.println("min temp:");
-  Serial.println(min_temp);
-
-  Serial.println("max temp:");
-  Serial.println(max_temp);
-
-  Serial.println("min_moi:");
-  Serial.println(min_moi);
-
-  Serial.println("max_moi:");
-  Serial.println(max_moi);
-}
-
-void setup_mqtt(){
-  client.setClient(espClient);
-  client.setServer(mqtt_server, mqtt_port);  
-  client.setCallback(callback);
-}
-
-void reconnect_mqtt() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    // If you do not want to use a username and password, change next line to
-    // if (client.connect("ESP8266Client")) {
-    if (client.connect("ESPClient8798yh98", mqtt_user, mqtt_password)) {
-      Serial.println("connected");
-      client.subscribe(topic_setting_parameters,1);
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
+  Serial.print("\nconnecting...");
+  //bool connect(const char clientID[], const char username[], const char password[], bool skip = false);
+  while (!client.connect("arduino", mqtt_user, mqtt_password)) {
+    Serial.print(".");
+    delay(1000);
   }
+
+  Serial.println("\nconnected!");
+
+  client.subscribe(topic_setting_parameters, 2);
+  // client.unsubscribe("/hello");
 }
 
-/*******************************************/
+void messageReceived(String &topic, String &payload) {
+  Serial.println("incoming: " + topic + " - " + payload);
+
+  // Note: Do not use the client in the callback to publish, subscribe or
+  // unsubscribe as it may cause deadlocks when other things arrive while
+  // sending and receiving acknowledgments. Instead, change a global variable,
+  // or push to a queue and handle it in the loop after calling `client.loop()`.
+}
 
 void setup() {
   Serial.begin(115200);
-  setup_wifi();
-  setup_mqtt();
+  WiFi.begin(ssid, pass);
+
+  // Note: Local domain names (e.g. "Computer.local" on OSX) are not supported
+  // by Arduino. You need to set the IP address directly.
+  client.begin("130.136.2.70",1883, net);
+  client.onMessage(messageReceived);
+
+  connect();
   setup_temperature();
 }
 
 void loop() {
+  client.loop();
+  delay(10);  // <- fixes some issues with WiFi stability
+
   if (!client.connected()) {
-    reconnect_mqtt();
+    connect();
   }
-  else{
-    client.loop();
-    if(sample_frequency!=NULL){ //controllo se è arrivato messaggio di retain
-      client.publish(in_topic, String(current_temperature()).c_str());
-      delay(sample_frequency);
-    }
+
+  // publish a message roughly every second.
+  if (millis() - lastMillis > 1000) {
+    lastMillis = millis();
+    String temperature = String(current_temperature(),2);
+    char payload[temperature.length()];
+    temperature.toCharArray(payload, temperature.length());
+    client.publish(in_topic,payload ,strlen(payload), false, 2);
   }
 }
