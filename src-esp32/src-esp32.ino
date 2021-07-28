@@ -7,11 +7,18 @@
 // by Joël Gähwiler
 // https://github.com/256dpi/arduino-mqtt
 
+#define ID_THIS_ESP32 "1520"
+#define GPS_COORDINATES "41.890209,12.492231"
+
 #include <WiFi.h>
 #include <MQTT.h>
 
+#define ONBOARD_LED  2
 
 /*****************************************/
+//DHT11 sensor provides humidity value 
+//in percentage in relative humidity (20 to 90% RH, cioè relative humidity) 
+//and temperature values in degree Celsius (0 to 50 °C) 
 
 #include <DHT.h>
 
@@ -45,6 +52,14 @@ float current_temperature(){
   }
   return currentTemperature;
 }
+
+float current_humidity(){
+  float currentHumidity = dht.readHumidity();
+  Serial.print("Nuova umidità:" );
+  Serial.println(currentHumidity);
+  return currentHumidity;
+}
+
 
 /****************************************/
 
@@ -138,7 +153,10 @@ void setup() {
 
   connect();
   setup_temperature();
+  pinMode(ONBOARD_LED,OUTPUT);
 }
+
+unsigned long previousMillis = 0;    
 
 void loop() {
   client.loop();
@@ -147,13 +165,46 @@ void loop() {
   if (!client.connected()) {
     connect();
   }
+  else{
+    if(sample_frequency!=NULL){
+      
+      float temperature_float = current_temperature();
+      String temperature = String(temperature_float,2);
 
-  // publish a message roughly every second.
-  if (millis() - lastMillis > 1000) {
-    lastMillis = millis();
-    String temperature = String(current_temperature(),2);
-    char payload[temperature.length()];
-    temperature.toCharArray(payload, temperature.length());
-    client.publish(in_topic,payload ,strlen(payload), false, 2);
+      float humidity_float = current_humidity();
+      String humidity = String(humidity_float,2);
+
+      String id = String(ID_THIS_ESP32);
+      String gps_coordinates = String(GPS_COORDINATES);
+      String wifi_rssi = String(WiFi.RSSI());
+      
+
+      String payload_string;
+      String comma=";";
+      
+      payload_string.concat(temperature);
+      payload_string.concat(comma);
+      payload_string.concat(humidity);
+      payload_string.concat(comma);
+      payload_string.concat(id);
+      payload_string.concat(comma);
+      payload_string.concat(gps_coordinates);
+      payload_string.concat(comma);
+      payload_string.concat(wifi_rssi);
+      payload_string.concat(comma);
+      
+      char payload[payload_string.length()+1];
+      
+      payload_string.toCharArray(payload, payload_string.length()+1);
+      
+      client.publish(in_topic,payload ,strlen(payload), false, 2);
+
+      if(temperature_float<min_temp || temperature_float>max_temp){
+        digitalWrite(ONBOARD_LED,HIGH);
+        delay(100);
+        digitalWrite(ONBOARD_LED,LOW);
+      }
+      delay(sample_frequency);    
+      }
   }
 }
