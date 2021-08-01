@@ -30,7 +30,7 @@ client.on("error", function (error) {
 setInterval(() => {
     if (client.connected == true) {
         counter++;
-        string = "6000;10.24;15.12;12.33;25.29222222;"
+        string = "10000;10.24;15.12;30;40;"
 
         client.publish(topic_1, string.toString(), options);
         console.log('-published: ' + counter)

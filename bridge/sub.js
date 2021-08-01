@@ -80,6 +80,10 @@ client.on('message', function (topic, message, packet) {
                 info = 'soil_moisture';
                 point.floatField(info, data[i])
             }
+            else if (i == 6) {
+                info = 'SHI';
+                point.floatField(info, data[i])
+            }
 
             writeApi.useDefaultTags({ id: data[2], GPS: data[3].replace(",", ";") })
 
