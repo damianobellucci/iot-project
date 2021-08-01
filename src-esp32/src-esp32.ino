@@ -1,3 +1,20 @@
+#include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+AsyncWebServer server(80);
+
+const char* PARAM_MESSAGE = "message";
+
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+}
+
 /**********SOIL MOISTURE SENSOR************************/
 int readSoilMoisture(){
     const int dry = 2865;
@@ -98,6 +115,8 @@ void messageReceived(String &topic, String &payload) {
 }
 
 /********************************************************/
+
+
 #define ID_THIS_ESP32 "1520"
 #define GPS_COORDINATES "41.890209,12.492231"
 #define ONBOARD_LED 2
@@ -116,6 +135,90 @@ void setup() {
   wifiConnect();
 
   pinMode(ONBOARD_LED,OUTPUT);
+
+
+  
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+      request->send(200, "text/plain", "Hello, world");
+  });
+
+  // Send a GET request to <IP>/get?message=<message>
+  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      String message;
+      if (request->hasParam(PARAM_MESSAGE)) {
+          message = request->getParam(PARAM_MESSAGE)->value();
+      } else {
+          message = "No message sent";
+      }
+      request->send(200, "text/plain", "Hello, GET: " + message);
+  });
+
+  // Send a POST request to <IP>/post with a form field message set to <message>
+  server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
+      String payload;
+      if (request->hasParam(PARAM_MESSAGE, true)) {
+          payload = request->getParam(PARAM_MESSAGE, true)->value();
+      } else {
+          payload = "No message sent";
+      }
+      
+      int ind1 = payload.indexOf(";");
+      sample_frequency=payload.substring(0,ind1).toInt();
+    
+      int ind2 = payload.indexOf(";", ind1+1 );
+      min_temp = payload.substring(ind1+1, ind2+1).toFloat(); 
+    
+      int ind3 = payload.indexOf(";", ind2+1 );
+      max_temp = payload.substring(ind2+1, ind3+1).toFloat();
+    
+      int ind4 = payload.indexOf(";", ind3+1 );
+      min_moi = payload.substring(ind3+1, ind4+1).toFloat();
+    
+      int ind5 = payload.indexOf(";", ind4+1 );
+      max_moi = payload.substring(ind4+1, ind5+1).toFloat();
+    
+      Serial.println("Sample frequency:");
+      Serial.println(sample_frequency);
+    
+      Serial.println("min temp:");
+      Serial.println(min_temp);
+    
+      Serial.println("max temp:");
+      Serial.println(max_temp);
+    
+      Serial.println("min_moi:");
+      Serial.println(min_moi);
+    
+      Serial.println("max_moi:");
+      Serial.println(max_moi);
+    
+      
+      request->send(200, "text/plain", "Hello, POST: " + payload);
+  });
+
+  server.onNotFound(notFound);
+
+  server.begin();
+}
+
+float calculateSHI(float temperature, int moi){
+  float avgTEMP = (max_temp-min_temp)/2;
+  float avgSOIL = (max_moi-min_moi)/2;
+  
+  float x=temperature-avgTEMP;
+  if(x<0){
+    x=-x;
+  }
+
+  float y = moi-avgSOIL;
+
+  if(y<0){
+    y=-y;
+  }
+  
+  float SHI = 0.5*x+0.5*y;
+  
+  return(SHI);
 }
 
 void loop(){
@@ -139,6 +242,8 @@ void loop(){
     float temperature = dht.readTemperature();
     float humidity = dht.readHumidity();
 
+    float SHI=calculateSHI(temperature, soil_moisture);
+
     String payload_string;
     String comma=";";
      
@@ -154,6 +259,8 @@ void loop(){
     payload_string.concat(comma);
     payload_string.concat(soil_moisture);
     payload_string.concat(comma);
+    payload_string.concat(SHI);
+    payload_string.concat(comma);
     
     char payload[payload_string.length()+1];
     payload_string.toCharArray(payload, payload_string.length()+1);
@@ -161,7 +268,14 @@ void loop(){
     
     client.publish(in_topic,payload ,strlen(payload), false, 2);
 
-    if(temperature<min_temp || temperature>max_temp){
+    if(temperature<min_temp || temperature>max_temp ){
+      Serial.println("blinking led for temperature out of range");
+      digitalWrite(ONBOARD_LED,HIGH);
+      delay(100);
+      digitalWrite(ONBOARD_LED,LOW);
+    }
+    if(soil_moisture<min_moi || soil_moisture>max_moi){
+      Serial.println("blinking led for soil moisture out of range");
       digitalWrite(ONBOARD_LED,HIGH);
       delay(100);
       digitalWrite(ONBOARD_LED,LOW);

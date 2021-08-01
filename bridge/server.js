@@ -1,8 +1,10 @@
 /*************************************************/
+var fs = require('fs')
 var express = require('express')
 var app = express()
-const PORT = 5021
+const PORT = 3450
 
+var stringSettingParameters;
 
 app.post('/setparameters', function (req, res) {
     settingParameters = req.query;
@@ -14,7 +16,6 @@ app.post('/setparameters', function (req, res) {
         res.send(validate.errors)
     }
     else {
-
         if (!isNumeric(settingParameters.sampleFrequency)
             ||
             !isNumeric(settingParameters.minTemp)
@@ -62,23 +63,42 @@ app.post('/setparameters', function (req, res) {
                                         res.send({ error: "minTemp must be less than maxTemp." })
                                     }
                                     else {
-                                        string = settingParameters.sampleFrequency + ";" + settingParameters.minTemp + ";" + settingParameters.maxTemp + ";" + settingParameters.minMoi + ";" + settingParameters.maxMoi;
+                                        fs.writeFile('./config.json', JSON.stringify(settingParameters), (err) => {
+                                            if (err) throw err;
+                                            console.log('The file has been saved!');
+                                            string = settingParameters.sampleFrequency + ";" + settingParameters.minTemp + ";" + settingParameters.maxTemp + ";" + settingParameters.minMoi + ";" + settingParameters.maxMoi + ";";
+                                            stringSettingParameters = string;
+                                            const params = new URLSearchParams()
+                                            params.append('message', string)
 
-                                        if (client.connected) {
-                                            client.publish(topic_1, string.toString(), options, function (err) {
-                                                if (err) {
-                                                    res.send(err)
+                                            axios.post("http://192.168.1.3:80/post", params, configHeaders)
+                                                .then((result) => {
+                                                    console.log(result)
+                                                    res.send({ ack: '', committedRequest: "" })
+                                                })
+                                                .catch((err) => {
+                                                    res.send({ err: '' })
                                                     console.log(err)
-                                                }
-                                                else {
-                                                    console.log('-published: ', string)
-                                                    res.send({ ack: '', committedRequest: string })
-                                                }
-                                            });
-                                        }
-                                        else {
-                                            res.send({ failed: "something wrong in the server. Try again." })
-                                        }
+                                                })
+                                        });
+
+
+                                        /*
+                                    if (client.connected) {
+                                        client.publish(topic_1, string.toString(), options, function (err) {
+                                            if (err) {
+                                                res.send(err)
+                                                console.log(err)
+                                            }
+                                            else {
+                                                console.log('-published: ', string)
+                                                res.send({ ack: '', committedRequest: string })
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        res.send({ failed: "something wrong in the server. Try again." })
+                                    }*/
                                     }
                                 }
                             }
@@ -92,6 +112,19 @@ app.post('/setparameters', function (req, res) {
     }
 
 });
+
+app.get('/getparameters', function (req, res) {
+
+    fs.readFile('./config.json', function read(err, data) {
+        if (err) {
+            throw err;
+        }
+        data = (JSON.parse(data));
+        final = data.sampleFrequency + ";" + data.minTemp + ";" + data.maxTemp + ";" + data.minMoi + ";" + data.maxMoi + ";";
+        res.send(final);
+    });
+
+})
 
 app.listen(PORT, () => {
     console.log("listening port ", PORT)
@@ -154,4 +187,16 @@ const validate = ajv.compile(schema)
 function isNumeric(num) {
     return !isNaN(num)
 }
-/**************** */
+/*****************/
+
+const axios = require('axios')
+
+
+
+
+const configHeaders = {
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+}
+
