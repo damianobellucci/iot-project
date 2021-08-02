@@ -1,1 +1,1 @@
-{"sampleFrequency":30000,"minTemp":5,"maxTemp":30,"minMoi":0,"maxMoi":50}
+{"sampleFrequency":1000,"minTemp":30,"maxTemp":40,"minMoi":10,"maxMoi":50}

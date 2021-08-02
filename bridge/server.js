@@ -31,102 +31,76 @@ app.post('/setparameters', function (req, res) {
         res.send(validate.errors)
     }
     else {
-        if (!isNumeric(settingParameters.sampleFrequency)
-            ||
-            !isNumeric(settingParameters.minTemp)
-            ||
-            !isNumeric(settingParameters.maxTemp)
-            ||
-            !isNumeric(settingParameters.minMoi)
-            ||
-            !isNumeric(settingParameters.maxMoi)
-        ) {
-            res.send({ "error": "parameters must be numbers" })
+
+        if (!settingParameters.hasOwnProperty("sampleFrequency") && !settingParameters.hasOwnProperty("minTemp") && !settingParameters.hasOwnProperty("maxTemp") && !settingParameters.hasOwnProperty("minMoi") && !settingParameters.hasOwnProperty("maxMoi")) {
+            res.send({ error: "at least one parameter must be setted." })
         }
         else {
-            settingParameters.sampleFrequency = parseInt(settingParameters.sampleFrequency)
-            settingParameters.minTemp = parseInt(settingParameters.minTemp)
-            settingParameters.maxTemp = parseInt(settingParameters.maxTemp)
-            settingParameters.minMoi = parseInt(settingParameters.minMoi)
-            settingParameters.maxMoi = parseInt(settingParameters.maxMoi)
 
-            if (settingParameters.sampleFrequency <= 0) {
-                res.send({ error: "sampleFrequency must be more than zero." })
+
+
+            if (
+                (settingParameters.hasOwnProperty("sampleFrequency") && !isNumeric(settingParameters.sampleFrequency))
+                ||
+                (settingParameters.hasOwnProperty("minTemp") && !isNumeric(settingParameters.minTemp))
+                ||
+                (settingParameters.hasOwnProperty("maxTemp") && !isNumeric(settingParameters.maxTemp))
+                ||
+                (settingParameters.hasOwnProperty("minMoi") && !isNumeric(settingParameters.minMoi))
+                ||
+                (settingParameters.hasOwnProperty("maxMoi") && !isNumeric(settingParameters.maxMoi))
+            ) {
+                res.send({ "error": "parameters must be numbers" })
             }
             else {
-                if (settingParameters.minMoi < 0) {
-                    res.send({ error: "minMoi must be more or equal to zero." })
-                }
-                else {
-                    if (settingParameters.minMoi > settingParameters.maxMoi) {
-                        res.send({ error: "minMoi must be less or equal than maxMoi." })
+                fs.readFile('./config.json', function read(err, data) {
+                    if (err) {
+                        throw err;
                     }
-                    else {
-                        if (settingParameters.minMoi > settingParameters.maxMoi) {
-                            res.send({ error: "minMoi must be less or equal than maxMoi." })
-                        }
-                        else {
-                            if (settingParameters.minTemp < -40) {
-                                res.send({ error: "minTemp must be more or equal to -40." })
-                            }
-                            else {
-                                if (settingParameters.minTemp > 125) {
-                                    res.send({ error: "minTemp must be less or equal to 125." })
-                                }
-                                else {
-                                    if (settingParameters.minTemp > settingParameters.maxTemp) {
-                                        res.send({ error: "minTemp must be less than maxTemp." })
-                                    }
-                                    else {
-                                        fs.writeFile('./config.json', JSON.stringify(settingParameters), (err) => {
-                                            if (err) throw err;
-                                            console.log('The file has been saved!');
-                                            string = settingParameters.sampleFrequency + ";" + settingParameters.minTemp + ";" + settingParameters.maxTemp + ";" + settingParameters.minMoi + ";" + settingParameters.maxMoi + ";";
-                                            stringSettingParameters = string;
-                                            const params = new URLSearchParams()
-                                            params.append('message', string)
+                    let fileSettingParameters = JSON.parse(data);
+                    console.log("asd", fileSettingParameters)
 
-                                            axios.post("http://192.168.1.30:80/post", params, configHeaders)
-                                                .then((result) => {
-                                                    console.log(result)
-                                                    res.send({ ack: '', committedRequest: "" })
-                                                })
-                                                .catch((err) => {
-                                                    res.send({ err: '' })
-                                                    console.log(err)
-                                                })
-                                        });
+                    //sovrascrizione parametri
+                    settingParameters.hasOwnProperty("sampleFrequency") ? settingParameters.sampleFrequency = parseInt(settingParameters.sampleFrequency) : null
+                    settingParameters.hasOwnProperty("minTemp") ? settingParameters.minTemp = parseInt(settingParameters.minTemp) : null
+                    settingParameters.hasOwnProperty("maxTemp") ? settingParameters.maxTemp = parseInt(settingParameters.maxTemp) : null
+                    settingParameters.hasOwnProperty("minMoi") ? settingParameters.minMoi = parseInt(settingParameters.minMoi) : null
+                    settingParameters.hasOwnProperty("maxMoi") ? settingParameters.maxMoi = parseInt(settingParameters.maxMoi) : null
 
+                    try {
+                        list.forEach(f => {
+                            f(settingParameters)
+                        })
+                        fs.writeFile('./config.json', JSON.stringify(settingParameters), (err) => {
+                            if (err) throw err;
+                            console.log('The file has been saved!');
+                            string = settingParameters.sampleFrequency + ";" + settingParameters.minTemp + ";" + settingParameters.maxTemp + ";" + settingParameters.minMoi + ";" + settingParameters.maxMoi + ";";
+                            stringSettingParameters = string;
+                            const params = new URLSearchParams()
+                            params.append('message', string)
 
-                                        /*
-                                    if (client.connected) {
-                                        client.publish(topic_1, string.toString(), options, function (err) {
-                                            if (err) {
-                                                res.send(err)
-                                                console.log(err)
-                                            }
-                                            else {
-                                                console.log('-published: ', string)
-                                                res.send({ ack: '', committedRequest: string })
-                                            }
-                                        });
-                                    }
-                                    else {
-                                        res.send({ failed: "something wrong in the server. Try again." })
-                                    }*/
-                                    }
-                                }
-                            }
+                            axios.post("http://192.168.1.30:80/post", params, configHeaders)
+                                .then((result) => {
+                                    console.log(result)
+                                    res.send({ ack: '', committedRequest: "" })
+                                })
+                                .catch((err) => {
+                                    res.send({ err: '' })
+                                    console.log(err)
+                                })
+                        })
+                    } catch (e) {
+                        res.send(e.toString())
+                    };
 
-                        }
-                    }
-                }
+                });
 
             }
         }
     }
-
 });
+
+
 
 app.get('/getparameters', function (req, res) {
 
@@ -189,13 +163,13 @@ const schema = {
         maxMoi: { type: "string" }
     },
     additionalProperties: false,
-    "anyOf": [
+    /*"anyOf": [
         { "required": ["sampleFrequency"] },
         { "required": ["minTemp"] },
         { "required": ["maxTemp"] },
         { "required": ["minMoi"] },
         { "required": ["maxMoi"] }
-    ]
+    ]*/
 }
 
 const validate = ajv.compile(schema)
@@ -207,3 +181,63 @@ function isNumeric(num) {
 
 
 
+//prendo vecchia config (da file ) e ci applico sopra quella nuova, a quella nuova applico il test e se c'è qualche errore faccio una throw
+errors = {
+    one: "minMoi and maxMoi values must be between zero and 100",
+    two: "minMoi must be less than maxMoi",
+    three: "minTemp and maxTemp values must be between -40 and 125",
+    four: "minTemp must be less than maxTemp",
+    five: "sampleFrequency must not be less than 100"
+}
+
+function test1(obj) {
+    if (obj.minMoi < 0 || obj.minMoi > 100)
+        throw (errors.one)
+}
+
+function test2(obj) {
+    if (obj.minMoi > obj.maxMoi)
+        throw (errors.two)
+}
+
+function test3(obj) {
+    if (obj.minTemp < -40 || obj.maxTemp > 125)
+        throw (errors.three)
+}
+
+function test4(obj) {
+    if (obj.minTemp > obj.maxTemp)
+        throw (errors.four)
+}
+
+function test5(obj) {
+    if (obj.sampleFrequency <= 100)
+        throw (errors.five)
+}
+
+
+
+
+list = [test1, test2, test3, test4, test5]
+
+
+//let a = { "minMoi": 1, "maxMoi": 10, "minTemp": 1, "maxTemp": 3, "sampleFrequency": 4 }
+
+
+
+/*
+if (client.connected) {
+client.publish(topic_1, string.toString(), options, function (err) {
+    if (err) {
+        res.send(err)
+        console.log(err)
+    }
+    else {
+        console.log('-published: ', string)
+        res.send({ ack: '', committedRequest: string })
+    }
+});
+}
+else {
+res.send({ failed: "something wrong in the server. Try again." })
+}*/
