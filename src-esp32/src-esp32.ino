@@ -71,15 +71,17 @@ void mqttConnect(){
   
   Serial.println("\n mqtt connected!");
 
-  client.subscribe(topic_setting_parameters, 2);
+  //client.subscribe(topic_setting_parameters, 2);
+ 
+  
 }
 
 
 int sample_frequency = NULL;
 float min_temp, max_temp, min_moi, max_moi;
 
-void messageReceived(String &topic, String &payload) {
-  Serial.println("incoming: " + topic + " - " + payload);
+void messageReceived(String payload) {
+
 
   int ind1 = payload.indexOf(";");
   sample_frequency=payload.substring(0,ind1).toInt();
@@ -115,11 +117,49 @@ void messageReceived(String &topic, String &payload) {
 }
 
 /********************************************************/
-
+#include <HTTPClient.h>
 
 #define ID_THIS_ESP32 "1520"
 #define GPS_COORDINATES "41.890209,12.492231"
 #define ONBOARD_LED 2
+
+bool inizialized_setting_parameters = false;
+
+String raw_first_setting_parameters;
+
+#define  SERVER_IP  "http://192.168.1.9:3450/getparameters"
+
+bool inizializedSettingParameters(){
+    HTTPClient http;
+    http.begin(SERVER_IP);
+    int httpCode = http.GET();                                      
+    if (httpCode > 0) {
+        String payload = http.getString();
+        //Serial.println(httpCode);
+        Serial.println(payload);
+        Serial.println("Parametri di settaggio inizializzati.");
+        http.end();
+        raw_first_setting_parameters=payload;
+        return true;
+      }
+    else {
+      http.end();
+      Serial.println("Parametri di settaggio non ancora inizializzati...");
+      //Serial.println(httpCode);
+      return false;
+    }
+}
+
+// Set your Static IP address
+IPAddress local_IP(192, 168, 1, 30);
+// Set your Gateway IP address
+IPAddress gateway(192, 168, 1, 1);
+
+IPAddress subnet(255, 255, 0, 0);
+IPAddress primaryDNS(8, 8, 8, 8);   //optional
+IPAddress secondaryDNS(8, 8, 4, 4); //optional
+
+String ip_server=" ";
 
 void setup() {
   Serial.begin(115200);
@@ -128,19 +168,33 @@ void setup() {
   
   WiFi.begin(ssid, pass);
 
+ 
+  while (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    Serial.println("STA Failed to configure");
+  }
+  Serial.println(WiFi.localIP());
   client.begin(mqtt_server,mqtt_port, net);
-  client.onMessage(messageReceived);
-  client.subscribe(topic_setting_parameters, 2);
+
   
   wifiConnect();
+
+
+  while (!inizializedSettingParameters()){
+    if(WiFi.status() != WL_CONNECTED){
+      wifiConnect();
+    }
+  }
+  
+  messageReceived(raw_first_setting_parameters);
 
   pinMode(ONBOARD_LED,OUTPUT);
 
 
-  
+      /*
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
       request->send(200, "text/plain", "Hello, world");
   });
+
 
   // Send a GET request to <IP>/get?message=<message>
   server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
@@ -152,9 +206,11 @@ void setup() {
       }
       request->send(200, "text/plain", "Hello, GET: " + message);
   });
+  */
 
   // Send a POST request to <IP>/post with a form field message set to <message>
   server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
+      Serial.println("POST request arrived.");
       String payload;
       if (request->hasParam(PARAM_MESSAGE, true)) {
           payload = request->getParam(PARAM_MESSAGE, true)->value();
@@ -196,9 +252,13 @@ void setup() {
       request->send(200, "text/plain", "Hello, POST: " + payload);
   });
 
-  server.onNotFound(notFound);
 
+
+  server.onNotFound(notFound);
   server.begin();
+
+
+
 }
 
 float calculateSHI(float temperature, int moi){
@@ -227,13 +287,14 @@ void loop(){
   if(WiFi.status() != WL_CONNECTED){
     wifiConnect();
   }
+  
 
   //mqtt
   client.loop();
   if(!client.connected()){
     mqttConnect();
   }
-  
+   
 
   //collecting sensor data
   if(sample_frequency!=NULL){

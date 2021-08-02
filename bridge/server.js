@@ -4,12 +4,27 @@ var express = require('express')
 var app = express()
 const PORT = 3450
 
+
+
+const axios = require('axios')
+
+
+const configHeaders = {
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+}
+
+
+
 var stringSettingParameters;
+
 
 app.post('/setparameters', function (req, res) {
     settingParameters = req.query;
     console.log("arrived request: ", settingParameters)
 
+    console.log("ciao")
     const valid = validate(settingParameters)
     if (!valid) {
         console.log(validate.errors)
@@ -71,7 +86,7 @@ app.post('/setparameters', function (req, res) {
                                             const params = new URLSearchParams()
                                             params.append('message', string)
 
-                                            axios.post("http://192.168.1.3:80/post", params, configHeaders)
+                                            axios.post("http://192.168.1.30:80/post", params, configHeaders)
                                                 .then((result) => {
                                                     console.log(result)
                                                     res.send({ ack: '', committedRequest: "" })
@@ -120,6 +135,7 @@ app.get('/getparameters', function (req, res) {
             throw err;
         }
         data = (JSON.parse(data));
+        console.log(data)
         final = data.sampleFrequency + ";" + data.minTemp + ";" + data.maxTemp + ";" + data.minMoi + ";" + data.maxMoi + ";";
         res.send(final);
     });
@@ -189,14 +205,5 @@ function isNumeric(num) {
 }
 /*****************/
 
-const axios = require('axios')
 
-
-
-
-const configHeaders = {
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-}
 
