@@ -2,7 +2,7 @@
 const { InfluxDB } = require('@influxdata/influxdb-client')
 
 // You can generate a Token from the "Tokens Tab" in the UI
-const token = '4pQidiCvurOgttstoaQIKrwUdk-9dnGxb4DBRXuqYX9JNE56KIsTSFxPaoP8RVEbxI2fFueACaP0C8U3d1iJgw=='
+const token = 'h_ePgBkIpz-64X3GZmeNrlBFiVj4rF0hDJPyupnSRSlq9XiVwoaeaWvvpjDKpDr1Tv-2EgfVvGtpLu1qJKw7NA=='
 const org = 'damiano'
 const bucket = 'damiano'
 

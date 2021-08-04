@@ -211,7 +211,7 @@ function test4(obj) {
 }
 
 function test5(obj) {
-    if (obj.sampleFrequency <= 100)
+    if (obj.sampleFrequency < 100)
         throw (errors.five)
 }
 
