@@ -16,7 +16,7 @@ query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 query = 'from(bucket:"damiano")' \
-        ' |> range(start:2021-04-10T18:00:00Z)'\
+        ' |> range(start:2021-08-04T14:00:00Z, stop:2021-08-04T21:20:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "mem")' \
         ' |> filter(fn: (r) => r._field == "temperature")'
 
@@ -42,7 +42,7 @@ print(df)
 m = Prophet()
 m.fit(df)
 
-future = m.make_future_dataframe(periods=50)
+future = m.make_future_dataframe(periods=2)
 
 forecast = m.predict(future)
 print("aaaa")
