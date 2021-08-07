@@ -52,7 +52,7 @@ client.on('message', function (topic, message, packet) {
 
 
     for (let i = 0; i < data.length; i++) {
-        const point = new Point('mem');
+        const point = new Point('training');
         if (data[i] != undefined && data[i] != 'nan') {
             let info;
             if (i == 0) {

@@ -1,4 +1,5 @@
 
+from influxdb_client import InfluxDBClient, Point, WriteOptions
 import pandas as pd
 import time
 from prophet import Prophet
@@ -26,12 +27,12 @@ raw = []
 for table in result:
     for record in table.records:
         raw.append((record.get_value(), record.get_time()))
-#print(raw[0:])
+# print(raw[0:])
 
 
 print("=== influxdb query into dataframe ===")
 
-df=pd.DataFrame(raw, columns=['y','ds'], index=None)
+df = pd.DataFrame(raw, columns=['y', 'ds'], index=None)
 for col in df.select_dtypes(['datetimetz']).columns:
     df[col] = df[col].dt.tz_convert(None)
 
@@ -52,20 +53,17 @@ print(forecast)
 
 forecast['measurement'] = "views"
 
-cp = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper','measurement']].copy()
-lines = [str(cp["measurement"][d]) 
-         + ",type=forecast" 
-         + " " 
+cp = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper', 'measurement']].copy()
+lines = [str(cp["measurement"][d])
+         + ",type=forecast"
+         + " "
          + "yhat=" + str(cp["yhat"][d]) + ","
          + "yhat_lower=" + str(cp["yhat_lower"][d]) + ","
          + "yhat_upper=" + str(cp["yhat_upper"][d])
          + " " + str(int(time.mktime(cp['ds'][d].timetuple()))) + "000000000" for d in range(len(cp))]
 
 
-from influxdb_client import InfluxDBClient, Point, WriteOptions
-from influxdb_client.client.write_api import SYNCHRONOUS
-
-_write_client = client.write_api(write_options=WriteOptions(batch_size=1000, 
+_write_client = client.write_api(write_options=WriteOptions(batch_size=1000,
                                                             flush_interval=10_000,
                                                             jitter_interval=2_000,
                                                             retry_interval=5_000))
