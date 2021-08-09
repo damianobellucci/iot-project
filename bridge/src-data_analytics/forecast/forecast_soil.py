@@ -22,11 +22,10 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 query = 'from(bucket:"damiano")' \
         ' |> range(start:2021-08-09T04:50:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "mem")' \
-        ' |> filter(fn: (r) => r._field == "temperature")'
+        ' |> filter(fn: (r) => r._field == "soil_moisture")'
 
 while(True):
     result = client.query_api().query(org=org, query=query)
-
     raw = []
     for table in result:
         for record in table.records:
@@ -42,7 +41,7 @@ while(True):
         a.index = pd.DatetimeIndex(a.index).to_period('S')
         converted = lastValueInDb.to_pydatetime()
         converted = converted + datetime.timedelta(seconds=1)
-        fined = converted + datetime.timedelta(seconds=50)
+        fined = converted + datetime.timedelta(seconds=10)
         # print(converted)
         stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
         print(stepwise_fit)
@@ -58,9 +57,9 @@ while(True):
         model = ARIMA(a, order=parameters)
 
         model_fit = model.fit()
-        start_index = len(a)
-        end_index = start_index + 20
+
         forecast = model_fit.predict(start=converted, end=fined)
+        print(forecast)
         # forecast = model_fit.predict(start=start_index,end=end_index)
 
         print(forecast.tail(1))
@@ -68,6 +67,13 @@ while(True):
         timestamp_forecasted_value = forecast.tail(1).index[0]
         value_forecasted = forecast.tail(1).values[0]
 
-        point = Point("mem").tag("host50", "host1").field(
-            "forecast_temperature", value_forecasted).time(str(timestamp_forecasted_value))
+        new_timestamp = lastValueInDb.to_pydatetime()
+        new_timestamp = new_timestamp + datetime.timedelta(seconds=10)
+
+        if value_forecasted < 0:
+            value_forecasted = 0
+
+        #point = Point("mem").tag("host50", "host1").field("forecast_temperature", value_forecasted).time(str(timestamp_forecasted_value))
+        point = Point("mem").field(
+            "soil_moisture_forecast", value_forecasted).time(str(new_timestamp))
         write_api.write(bucket, org, point)

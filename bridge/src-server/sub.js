@@ -57,6 +57,7 @@ client.on('message', function (topic, message, packet) {
             let info;
             if (i == 0) {
                 info = 'temperature';
+                console.log(data[i])
                 point.floatField(info, data[i])
             }
             else if (i == 1) {
@@ -89,10 +90,11 @@ client.on('message', function (topic, message, packet) {
 
 
 
-            writeApi.writePoint(point)
+            writeApi.writePoint(point, { precision: 's' })
             writeApi
                 .close()
                 .then(() => {
+
                     //console.log('FINISHED')
                 })
                 .catch(e => {
