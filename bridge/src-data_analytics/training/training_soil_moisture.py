@@ -44,12 +44,13 @@ history = [x for x in train]
 predictions = list()
 
 
-stepwise_fit = auto_arima(history, trace=True, suppress_warnings=True)
-tupla = tuple(str(stepwise_fit)[6:13])
-parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
-
 for t in range(len(test)):
     print(t)
+
+    stepwise_fit = auto_arima(history, trace=True, suppress_warnings=True)
+    tupla = tuple(str(stepwise_fit)[6:13])
+    parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
+
     model = ARIMA(history, order=parameters)
     model_fit = model.fit()
     output = model_fit.forecast()

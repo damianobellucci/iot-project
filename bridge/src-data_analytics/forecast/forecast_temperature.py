@@ -38,8 +38,6 @@ while(True):
     a = pd.Series(vals, index=idx)
     lastValueInDb = a.tail(1).index[0]
 
-    final_parameters = (3, 2, 1)
-
     if lastValueControlled != lastValueInDb:
         lastValueControlled = lastValueInDb
         a.index = pd.DatetimeIndex(a.index).to_period('S')
@@ -47,7 +45,12 @@ while(True):
         converted = converted + datetime.timedelta(seconds=1)
         fined = converted + datetime.timedelta(seconds=10)
 
-        model = ARIMA(a, order=final_parameters)
+        stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
+        tupla = tuple(str(stepwise_fit)[6:13])
+        parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
+
+        model = ARIMA(a, order=parameters)
+
         model_fit = model.fit()
         forecast = model_fit.predict(start=converted, end=fined)
 
