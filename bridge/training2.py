@@ -5,10 +5,10 @@ from statsmodels.tsa.arima.model import ARIMA
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 import datetime
-import matplotlib.pyplot as plt
-
+import matplotlib.pyplot as pyplot
+from math import sqrt
 from pmdarima import auto_arima
-
+from sklearn.metrics import mean_squared_error
 
 lastValueControlled = None
 lastValueInDb = None
@@ -36,23 +36,30 @@ vals = [x[0] for x in raw]
 
 dataset = pd.Series(vals)
 
-len_dataset = len(dataset)
-len_test = 50
+dataset = dataset[0:50]
 
-train = dataset[0:len_dataset-len_test]
-len_train = len(train)
-test = dataset[len(train)-1:]
+X = dataset.values
+size = int(len(X) * 0.80)
+train, test = X[0:size], X[size:len(X)]
+history = [x for x in train]
+predictions = list()
+# walk-forward validation
+for t in range(len(test)):
+    print(t)
+    model = ARIMA(history, order=(1, 1, 2))
+    model_fit = model.fit()
+    output = model_fit.forecast()
+    yhat = output[0]
+    predictions.append(yhat)
+    obs = test[t]
+    history.append(obs)
 
+# evaluate forecasts
+rmse = sqrt(mean_squared_error(test, predictions))
+print('Test RMSE: %.3f' % rmse)
+# plot forecasts against actual outcomes
+pyplot.plot(test, label="test set")
+pyplot.plot(predictions, color='red', label='forecast')
 
-#stepwise_fit = auto_arima(train, trace=True, suppress_warnings=True)
-model = ARIMA(train, order=(1, 1, 2))
-model_fit = model.fit()
-
-forecast = model_fit.predict(start=len_train-1, end=len_dataset-1)
-
-
-train.plot()
-test.plot()
-forecast.plot()
-
-plt.show()
+pyplot.legend(loc="upper left")
+pyplot.show()

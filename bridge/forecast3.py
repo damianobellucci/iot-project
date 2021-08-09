@@ -20,7 +20,7 @@ query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 query = 'from(bucket:"damiano")' \
-        ' |> range(start:2021-08-07T06:50:00Z)'\
+        ' |> range(start:2021-08-09T04:50:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "mem")' \
         ' |> filter(fn: (r) => r._field == "temperature")'
 
@@ -42,15 +42,26 @@ while(True):
         a.index = pd.DatetimeIndex(a.index).to_period('S')
         converted = lastValueInDb.to_pydatetime()
         converted = converted + datetime.timedelta(seconds=1)
-        fined = converted + datetime.timedelta(seconds=10)
+        fined = converted + datetime.timedelta(seconds=50)
         # print(converted)
         stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
-        model = ARIMA(a, order=(5, 0, 0))
+        print(stepwise_fit)
+        print(type(str(stepwise_fit)))
+        print(str(stepwise_fit)[6:13])
+
+        tupla = tuple(str(stepwise_fit)[6:13])
+        parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
+        print(stepwise_fit)
+        # print("ciao")
+        print(parameters)
+
+        model = ARIMA(a, order=parameters)
+
         model_fit = model.fit()
         start_index = len(a)
         end_index = start_index + 20
         forecast = model_fit.predict(start=converted, end=fined)
-        #forecast = model_fit.predict(start=start_index,end=end_index)
+        # forecast = model_fit.predict(start=start_index,end=end_index)
 
         print(forecast.tail(1))
         print(type(forecast.tail(1)))
