@@ -20,7 +20,7 @@ query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 query = 'from(bucket:"damiano")' \
-        ' |> range(start:2021-08-09T14:00:00Z)'\
+        ' |> range(start:2021-08-09T16:00:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "mem")' \
         ' |> filter(fn: (r) => r._field == "soil_moisture")'
 

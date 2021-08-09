@@ -36,12 +36,13 @@ vals = [x[0] for x in raw]
 
 dataset = pd.Series(vals)
 
+
 X = dataset.values
 size = int(len(X) * 0.80)
 train, test = X[0:size], X[size:len(X)]
 history = [x for x in train]
 predictions = list()
-# walk-forward validation
+
 
 stepwise_fit = auto_arima(history, trace=True, suppress_warnings=True)
 tupla = tuple(str(stepwise_fit)[6:13])

@@ -62,8 +62,8 @@ for t in range(len(test)):
 rmse = sqrt(mean_squared_error(test, predictions))
 print('Test RMSE: %.3f' % rmse)
 # plot forecasts against actual outcomes
-pyplot.plot(test, label="temperature test set")
-pyplot.plot(predictions, color='red', label='temperature forecast')
+pyplot.plot(test, label="soil moisture test set")
+pyplot.plot(predictions, color='red', label='soil moisture forecast')
 
 pyplot.legend(loc="upper left")
 pyplot.show()
