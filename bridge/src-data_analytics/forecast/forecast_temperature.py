@@ -21,7 +21,7 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 
 
 query = 'from(bucket:"damiano")' \
-        ' |> range(start:2021-08-09T10:20:00Z)'\
+        ' |> range(start:2021-08-09T14:00:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "mem")' \
         ' |> filter(fn: (r) => r._field == "temperature")'
 
@@ -38,6 +38,8 @@ while(True):
     a = pd.Series(vals, index=idx)
     lastValueInDb = a.tail(1).index[0]
 
+    final_parameters = (3, 2, 1)
+
     if lastValueControlled != lastValueInDb:
         lastValueControlled = lastValueInDb
         a.index = pd.DatetimeIndex(a.index).to_period('S')
@@ -45,11 +47,7 @@ while(True):
         converted = converted + datetime.timedelta(seconds=1)
         fined = converted + datetime.timedelta(seconds=10)
 
-        stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
-        tupla = tuple(str(stepwise_fit)[6:13])
-        parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
-
-        model = ARIMA(a, order=parameters)
+        model = ARIMA(a, order=final_parameters)
         model_fit = model.fit()
         forecast = model_fit.predict(start=converted, end=fined)
 
@@ -59,7 +57,7 @@ while(True):
         new_timestamp = lastValueInDb.to_pydatetime()
         new_timestamp = new_timestamp + datetime.timedelta(seconds=10)
 
-        #point = Point("mem").tag("host50", "host1").field("forecast_temperature", value_forecasted).time(str(timestamp_forecasted_value))
+        # point = Point("mem").tag("host50", "host1").field("forecast_temperature", value_forecasted).time(str(timestamp_forecasted_value))
         point = Point("mem").field(
             "temperature_forecast", value_forecasted).time(str(new_timestamp))
         write_api.write(bucket, org, point)

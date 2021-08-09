@@ -36,17 +36,20 @@ vals = [x[0] for x in raw]
 
 dataset = pd.Series(vals)
 
-dataset = dataset[0:50]
-
 X = dataset.values
 size = int(len(X) * 0.80)
 train, test = X[0:size], X[size:len(X)]
 history = [x for x in train]
 predictions = list()
 # walk-forward validation
+
+stepwise_fit = auto_arima(history, trace=True, suppress_warnings=True)
+tupla = tuple(str(stepwise_fit)[6:13])
+parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
+
 for t in range(len(test)):
     print(t)
-    model = ARIMA(history, order=(1, 1, 2))
+    model = ARIMA(history, order=parameters)
     model_fit = model.fit()
     output = model_fit.forecast()
     yhat = output[0]
@@ -58,8 +61,8 @@ for t in range(len(test)):
 rmse = sqrt(mean_squared_error(test, predictions))
 print('Test RMSE: %.3f' % rmse)
 # plot forecasts against actual outcomes
-pyplot.plot(test, label="test set")
-pyplot.plot(predictions, color='red', label='forecast')
+pyplot.plot(test, label="temperature test set")
+pyplot.plot(predictions, color='red', label='temperature forecast')
 
 pyplot.legend(loc="upper left")
 pyplot.show()

@@ -20,9 +20,11 @@ query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 query = 'from(bucket:"damiano")' \
-        ' |> range(start:2021-08-09T04:50:00Z)'\
+        ' |> range(start:2021-08-09T14:00:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "mem")' \
         ' |> filter(fn: (r) => r._field == "soil_moisture")'
+
+final_parameters = (0, 1, 1)
 
 while(True):
     result = client.query_api().query(org=org, query=query)
@@ -42,19 +44,8 @@ while(True):
         converted = lastValueInDb.to_pydatetime()
         converted = converted + datetime.timedelta(seconds=1)
         fined = converted + datetime.timedelta(seconds=10)
-        # print(converted)
-        stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
-        print(stepwise_fit)
-        print(type(str(stepwise_fit)))
-        print(str(stepwise_fit)[6:13])
 
-        tupla = tuple(str(stepwise_fit)[6:13])
-        parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
-        print(stepwise_fit)
-        # print("ciao")
-        print(parameters)
-
-        model = ARIMA(a, order=parameters)
+        model = ARIMA(a, order=final_parameters)
 
         model_fit = model.fit()
 
