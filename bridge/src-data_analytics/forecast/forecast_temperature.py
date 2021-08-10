@@ -14,15 +14,15 @@ lastValueInDb = None
 
 token = '4pQidiCvurOgttstoaQIKrwUdk-9dnGxb4DBRXuqYX9JNE56KIsTSFxPaoP8RVEbxI2fFueACaP0C8U3d1iJgw=='
 org = 'damiano'
-bucket = 'damiano'
+bucket = 'agg-project'
 client = InfluxDBClient(url="http://localhost:8086", token=token, org=org)
 query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 
-query = 'from(bucket:"damiano")' \
+query = 'from(bucket:"agg-project")' \
         ' |> range(start:2021-08-09T16:00:00Z)'\
-        ' |> filter(fn: (r) => r._measurement == "mem")' \
+        ' |> filter(fn: (r) => r._measurement == "samples")' \
         ' |> filter(fn: (r) => r._field == "temperature")'
 
 while(True):
@@ -43,7 +43,7 @@ while(True):
         a.index = pd.DatetimeIndex(a.index).to_period('S')
         converted = lastValueInDb.to_pydatetime()
         converted = converted + datetime.timedelta(seconds=1)
-        fined = converted + datetime.timedelta(seconds=10)
+        fined = converted << << < + datetime.timedelta(seconds=10)
 
         stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
         tupla = tuple(str(stepwise_fit)[6:13])
@@ -61,6 +61,6 @@ while(True):
         new_timestamp = new_timestamp + datetime.timedelta(seconds=10)
 
         # point = Point("mem").tag("host50", "host1").field("forecast_temperature", value_forecasted).time(str(timestamp_forecasted_value))
-        point = Point("mem").field(
+        point = Point("forecast").field(
             "temperature_forecast", value_forecasted).time(str(new_timestamp))
         write_api.write(bucket, org, point)

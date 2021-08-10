@@ -187,7 +187,7 @@ errors = {
     two: "minMoi must be less than maxMoi",
     three: "minTemp and maxTemp values must be between -40 and 125",
     four: "minTemp must be less than maxTemp",
-    five: "sampleFrequency must not be less than 100"
+    five: "sampleFrequency must not be less than 100 and less than 5000"
 }
 
 function test1(obj) {
@@ -211,7 +211,7 @@ function test4(obj) {
 }
 
 function test5(obj) {
-    if (obj.sampleFrequency < 100)
+    if (obj.sampleFrequency < 100 || obj.sampleFrequency >= 5000)
         throw (errors.five)
 }
 

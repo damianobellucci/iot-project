@@ -4,7 +4,7 @@ const { InfluxDB } = require('@influxdata/influxdb-client')
 // You can generate a Token from the "Tokens Tab" in the UI
 const token = '4pQidiCvurOgttstoaQIKrwUdk-9dnGxb4DBRXuqYX9JNE56KIsTSFxPaoP8RVEbxI2fFueACaP0C8U3d1iJgw=='
 const org = 'damiano'
-const bucket = 'project'
+const bucket = 'rawdata'
 
 const { Point } = require('@influxdata/influxdb-client')
 
@@ -52,9 +52,9 @@ client.on('message', function (topic, message, packet) {
 
 
     for (let i = 0; i < data.length; i++) {
-        const point = new Point('samples');
-        if (data[i] != undefined && data[i] != 'nan') {
-            let info;
+        const point = new Point('pre-validation');
+        if (data[i] == undefined || data[i] == 'nan') {
+            data[i] = 'null';
             if (i == 0) {
                 info = 'temperature';
                 console.log(data[i])

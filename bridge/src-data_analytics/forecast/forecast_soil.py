@@ -14,14 +14,14 @@ lastValueInDb = None
 
 token = '4pQidiCvurOgttstoaQIKrwUdk-9dnGxb4DBRXuqYX9JNE56KIsTSFxPaoP8RVEbxI2fFueACaP0C8U3d1iJgw=='
 org = 'damiano'
-bucket = 'damiano'
+bucket = 'agg-project'
 client = InfluxDBClient(url="http://localhost:8086", token=token, org=org)
 query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
-query = 'from(bucket:"damiano")' \
+query = 'from(bucket:"agg-project")' \
         ' |> range(start:2021-08-09T16:00:00Z)'\
-        ' |> filter(fn: (r) => r._measurement == "mem")' \
+        ' |> filter(fn: (r) => r._measurement == "samples")' \
         ' |> filter(fn: (r) => r._field == "soil_moisture")'
 
 
@@ -68,6 +68,6 @@ while(True):
             value_forecasted = 0
 
         #point = Point("mem").tag("host50", "host1").field("forecast_temperature", value_forecasted).time(str(timestamp_forecasted_value))
-        point = Point("mem").field(
+        point = Point("forecast").field(
             "soil_moisture_forecast", value_forecasted).time(str(new_timestamp))
         write_api.write(bucket, org, point)
