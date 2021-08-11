@@ -20,7 +20,7 @@ query_api = client.query_api()
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 query = 'from(bucket:"agg-project")' \
-        ' |> range(start:2021-08-09T16:00:00Z)'\
+        ' |> range(start:2021-08-11T12:00:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "samples")' \
         ' |> filter(fn: (r) => r._field == "soil_moisture")'
 
@@ -50,6 +50,7 @@ while(True):
 
         model = ARIMA(a, order=parameters)
 
+        # ?qui posso anche salvare il modello e poi richiamarlo e facendo model.fit(new_timeseries)?
         model_fit = model.fit()
 
         forecast = model_fit.predict(start=converted, end=fined)

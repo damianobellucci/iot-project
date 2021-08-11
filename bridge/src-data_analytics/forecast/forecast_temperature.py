@@ -21,7 +21,7 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 
 
 query = 'from(bucket:"agg-project")' \
-        ' |> range(start:2021-08-09T16:00:00Z)'\
+        ' |> range(start:2021-08-11T18:38:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "samples")' \
         ' |> filter(fn: (r) => r._field == "temperature")'
 
@@ -43,12 +43,13 @@ while(True):
         a.index = pd.DatetimeIndex(a.index).to_period('S')
         converted = lastValueInDb.to_pydatetime()
         converted = converted + datetime.timedelta(seconds=1)
-        fined = converted << << < + datetime.timedelta(seconds=10)
+        fined = converted + datetime.timedelta(seconds=10)
 
-        stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
-        tupla = tuple(str(stepwise_fit)[6:13])
-        parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
+        #stepwise_fit = auto_arima(a, trace=True, suppress_warnings=True)
+        #tupla = tuple(str(stepwise_fit)[6:13])
+        #parameters = (int(tupla[1]), int(tupla[3]), int(tupla[5]))
 
+        parameters = (3, 2, 1)
         model = ARIMA(a, order=parameters)
 
         model_fit = model.fit()
