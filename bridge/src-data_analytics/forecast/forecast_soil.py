@@ -12,7 +12,7 @@ from pmdarima import auto_arima
 lastValueControlled = None
 lastValueInDb = None
 
-token = '4pQidiCvurOgttstoaQIKrwUdk-9dnGxb4DBRXuqYX9JNE56KIsTSFxPaoP8RVEbxI2fFueACaP0C8U3d1iJgw=='
+token = 'h_ePgBkIpz-64X3GZmeNrlBFiVj4rF0hDJPyupnSRSlq9XiVwoaeaWvvpjDKpDr1Tv-2EgfVvGtpLu1qJKw7NA=='
 org = 'damiano'
 bucket = 'agg-project'
 client = InfluxDBClient(url="http://localhost:8086", token=token, org=org)
