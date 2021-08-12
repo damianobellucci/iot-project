@@ -50,7 +50,7 @@ while(True):
         m = Prophet()
         m.fit(df)
 
-        future = m.make_future_dataframe(periods=1,freq='10s')
+        future = m.make_future_dataframe(periods=1,freq='60s')
 
         forecast = m.predict(future)
 
