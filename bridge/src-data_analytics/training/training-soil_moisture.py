@@ -25,7 +25,7 @@ write_api = client.write_api(write_options=SYNCHRONOUS)
 query = 'from(bucket:"agg-project")' \
         ' |> range(start:2021-08-13T08:30:00Z)'\
         ' |> filter(fn: (r) => r._measurement == "samples")' \
-        ' |> filter(fn: (r) => r._field == "temperature")'
+        ' |> filter(fn: (r) => r._field == "soil_moisture")'
 
 result = client.query_api().query(org=org, query=query)
 
@@ -84,9 +84,9 @@ datasetValues = pd.Series(dataset_temperature_values, df['ds'])
 rmse = sqrt(mean_squared_error(test_temperature_values, prediction_temperature_values))
 print('Test RMSE: %.3f' % rmse)
 
-pyplot.plot(a, label="forecast temperature")
+pyplot.plot(a, label="forecast soil moisture")
 #pyplot.plot(real, label="temperature training set")
-pyplot.plot(datasetValues, label="temperature")
-pyplot.legend(loc="upper left")
+pyplot.plot(datasetValues, label="soil moisture")
+pyplot.legend(loc="upper right")
 
 pyplot.show()

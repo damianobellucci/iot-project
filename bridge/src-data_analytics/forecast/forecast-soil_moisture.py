@@ -22,7 +22,7 @@ while(True):
     query = 'from(bucket:"agg-project")' \
             ' |> range(start:-1h, stop:now())'\
             ' |> filter(fn: (r) => r._measurement == "samples")' \
-            ' |> filter(fn: (r) => r._field == "temperature")'
+            ' |> filter(fn: (r) => r._field == "soil_moisture")'
 
     result = client.query_api().query(org=org, query=query)
 
@@ -63,11 +63,11 @@ while(True):
 
 
         lines = [str(cp["measurement"][d])
-                + ",type=temperature_forecast"
+                + ",type=soil_moisture_forecast"
                 + " "
-                + "temperature_forecast=" + str(cp["yhat"][d]) + ","
-                + "temperature_forecast_yhat_lower=" + str(cp["yhat_lower"][d]) + ","
-                + "temperature_forecast_yhat_upper=" + str(cp["yhat_upper"][d])
+                + "soil_moisture_forecast=" + str(cp["yhat"][d]) + ","
+                + "soil_moisture_forecast_yhat_lower=" + str(cp["yhat_lower"][d]) + ","
+                + "soil_moisture_forecast_yhat_upper=" + str(cp["yhat_upper"][d])
                 + " " + str(int(time.mktime(cp['ds'][d].timetuple()))) + "000000000" for d in range(len(cp))]
         
         print(type(lines))
