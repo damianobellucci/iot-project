@@ -1,2 +1,2 @@
 # iot-project
-IoT project by Damiano Bellucci
+IoT project by Damiano Bellucci.
