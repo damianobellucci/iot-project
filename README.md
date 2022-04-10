@@ -1,2 +1,2 @@
-# iot-project
+# Smart agriculture
 IoT project by Damiano Bellucci.
